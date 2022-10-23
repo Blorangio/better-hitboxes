@@ -48,6 +48,11 @@ document.addEventListener("mousedown", () => {
   sy=mouseY;
 });
 
+let lineEnd=false;
+document.addEventListener("mouseup", () => {
+  lineEnd=true;
+});
+
 function mouseOver() {
   if((Math.floor(pmouseX/10)+Math.floor(pmouseY/10))%2==0) {
     ctx.fillStyle="lightgray";
@@ -60,7 +65,23 @@ function mouseOver() {
 }
 let slope;
 let slope2;
+let slope3;
+
+let lines = [];
+
 function update() {
+  for(let i = 0;i<width;i++) {
+      squares.push([]);
+      for(let j = 0;j<height;j++) {
+        let c = squares[i][j];
+        if((j+i)%2==0) {
+          ctx.fillStyle="lightgray";
+        } else {
+          ctx.fillStyle="white";
+        }
+        ctx.fillRect(c.x, c.y, c.width, c.height);
+      }
+    }
   if(Math.floor(mouseX/10-1)<width&&Math.floor(mouseY/10-1)<height) {
     mouseOver();
   }
@@ -73,20 +94,38 @@ function update() {
     ctx.fillStyle="black";
     if(mouseX-sx!=0) {
       slope = (mouseY-sy)/(mouseX-sx);
+      slope3 = (mouseX-sx)/(mouseY-sy);
     } else {
       slope = sy;
     }
-    ctx.fillStyle="white"
-    slope2=(pmouseY-sy)/(pmouseX-sx);
-    for(let i = -width;i<width;i++) {
-      ctx.fillRect((i*10)+Math.floor((sx/10)-1)*10, (Math.floor(i*slope2)*10)+(height*10)-(Math.floor((sy/10)+5)*10), 10, 10);
-    }
     ctx.fillStyle="black";
     for(let i = -width;i<width;i++) {
-      ctx.fillRect((i*10)+Math.floor((sx/10)-1)*10, (Math.floor(i*slope)*10)+(height*10)-(Math.floor((sy/10)+5)*10), 10, 10);
+      ctx.fillRect(i*10+Math.floor(sx/10-1)*10, Math.floor(i*slope)*10+Math.floor((sy/10)-1)*10, 10, 10);
+    }
+    for(let i = -height;i<height;i++) {
+      ctx.fillRect(Math.floor(i*slope3)*10+Math.floor((sx/10)-1)*10, i*10+Math.floor(sy/10-1)*10, 10, 10);
     }
     ctx.fillStyle="red";
     ctx.fillRect(Math.floor((sx/10)-1)*10, Math.floor((sy/10)-1)*10, 10, 10);
+    if(lineEnd==true) {
+      lines.push([slope, sx, sy, slope3]);
+      lineEnd=false;
+      lineStart=false;
+    }
+  }
+
+  ctx.fillStyle = "black";
+  for(let i = 0;i<lines.length;i++) {
+    let slopes = lines[i][0];
+    let sxs = lines[i][1];
+    let sys = lines[i][2];
+    let slope3s = lines[i][3];
+    for(let i = -width;i<width;i++) {
+      ctx.fillRect(i*10+Math.floor(sxs/10-1)*10, Math.floor(i*slopes)*10+Math.floor((sys/10)-1)*10, 10, 10);
+    }
+    for(let i = -height;i<height;i++) {
+      ctx.fillRect(Math.floor(i*slope3s)*10+Math.floor((sxs/10)-1)*10, i*10+Math.floor(sys/10-1)*10, 10, 10);
+    }
   }
   
   pmouseX=mouseX;
