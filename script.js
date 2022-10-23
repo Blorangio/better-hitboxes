@@ -1,6 +1,8 @@
 let canvas = document.getElementById("mainCanvas");
 let ctx = canvas.getContext("2d");
 
+let textColliding = document.getElementById('isColliding');
+
 let squares = [];
 
 class square {
@@ -12,40 +14,41 @@ class square {
   }
 }
 
-let width = 100;
-let height = 50;
-
-for(let i = 0;i<width;i++) {
-  squares.push([]);
-  for(let j = 0;j<height;j++) {
-    squares[i].push(new square(i*10, j*10, 10, 10));
-    let c = squares[i][j];
-    if((j+i)%2==0) {
-      ctx.fillStyle="lightgray";
-    } else {
-      ctx.fillStyle="white";
-    }
-    ctx.fillRect(c.x, c.y, c.width, c.height);
+class Coord {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
   }
 }
+
+let width = 100;
+let height = 50;
 
 let mouseX = 0;
 let mouseY = 0;
 let pmouseX = 0;
 let pmouseY = 0;
 document.addEventListener("mousemove", () => {
-    mouseX = event.clientX;
-    mouseY = event.clientY;
+    mouseX = event.clientX-10;
+    mouseY = event.clientY-10;
 });
 
 let lineStart=false;
 let sx = 0;
 let sy = 0;
 
+let lines = [];
+let greaterOrLessThan = [];
+let clicked = false;
+
 document.addEventListener("mousedown", () => {
-  lineStart=true;
-  sx=mouseX;
-  sy=mouseY;
+  if(greaterOrLessThan.length==lines.length) {
+    lineStart=true;
+    sx=mouseX;
+    sy=mouseY;
+  } else {
+    clicked=true;
+  }
 });
 
 let lineEnd=false;
@@ -53,79 +56,78 @@ document.addEventListener("mouseup", () => {
   lineEnd=true;
 });
 
-function mouseOver() {
-  if((Math.floor(pmouseX/10)+Math.floor(pmouseY/10))%2==0) {
-    ctx.fillStyle="lightgray";
+function checkLineCollision(mousePos, b, slope, check) {
+  if(check) {
+    if(mousePos.y>=slope*mousePos.x+b) {
+      return true;
+    }
   } else {
-    ctx.fillStyle="white";
+    if(mousePos.y<=slope*mousePos.x+b) {
+      return true;
+    }
   }
-  ctx.fillRect(Math.floor(pmouseX/10-1)*10, Math.floor(pmouseY/10-1)*10, 10, 10);
-  ctx.fillStyle="gray";
-  ctx.fillRect(Math.floor(mouseX/10-1)*10, Math.floor(mouseY/10-1)*10, 10, 10);
+	return false;
 }
 let slope;
-let slope2;
-let slope3;
-
-let lines = [];
-
+let b;
+let once=true;
 function update() {
-  for(let i = 0;i<width;i++) {
-      squares.push([]);
-      for(let j = 0;j<height;j++) {
-        let c = squares[i][j];
-        if((j+i)%2==0) {
-          ctx.fillStyle="lightgray";
-        } else {
-          ctx.fillStyle="white";
-        }
-        ctx.fillRect(c.x, c.y, c.width, c.height);
-      }
-    }
-  if(Math.floor(mouseX/10-1)<width&&Math.floor(mouseY/10-1)<height) {
-    mouseOver();
-  }
 
   ctx.fillStyle="black";
-  ctx.fillRect(0, height*10, width*10, 100);
-  ctx.fillRect(width*10, 0, 100, height*10+100);
+  ctx.fillRect(0, 0, width*10+100, height*10+100);
+  ctx.fillStyle="white";
+  ctx.fillRect(0, 0, width*10, height*10);
 
-  if(lineStart==true) {
-    ctx.fillStyle="black";
-    if(mouseX-sx!=0) {
-      slope = (mouseY-sy)/(mouseX-sx);
-      slope3 = (mouseX-sx)/(mouseY-sy);
+  if(lineStart) {
+    if(sx-mouseX!=0) {
+      slope = (sy-mouseY)/(sx-mouseX);
     } else {
-      slope = sy;
+      slope = sx;
     }
-    ctx.fillStyle="black";
-    for(let i = -width;i<width;i++) {
-      ctx.fillRect(i*10+Math.floor(sx/10-1)*10, Math.floor(i*slope)*10+Math.floor((sy/10)-1)*10, 10, 10);
+    b = mouseY-mouseX*slope
+    ctx.beginPath();
+    ctx.moveTo(0, b);
+    ctx.lineTo(width*10, (width*10)*slope+b);
+    ctx.stroke();
+  }
+
+  if(lineEnd) {
+    if(once) {
+      lines.push([b, slope]);
+      once=false;
     }
-    for(let i = -height;i<height;i++) {
-      ctx.fillRect(Math.floor(i*slope3)*10+Math.floor((sx/10)-1)*10, i*10+Math.floor(sy/10-1)*10, 10, 10);
+    lineStart=false;
+  }
+  
+  if(lineEnd&&greaterOrLessThan.length==lines.length) {
+    lineEnd=false;
+    once=true;
+  } else if(lineEnd) {
+    if(clicked==true) {
+      greaterOrLessThan.push(checkLineCollision(new Coord(mouseX, mouseY), b, slope, true));
+      clicked=false;
     }
-    ctx.fillStyle="red";
-    ctx.fillRect(Math.floor((sx/10)-1)*10, Math.floor((sy/10)-1)*10, 10, 10);
-    if(lineEnd==true) {
-      lines.push([slope, sx, sy, slope3]);
-      lineEnd=false;
-      lineStart=false;
+  }
+  let truths = 0;
+  for(let i = 0;i<lines.length;i++) {
+    let bs = lines[i][0];
+    let slopes = lines[i][1];
+    
+    ctx.beginPath();
+    ctx.moveTo(0, bs);
+    ctx.lineTo(width*10, (width*10)*slopes+bs);
+    ctx.stroke();
+    if(greaterOrLessThan.length==lines.length) {
+      if(checkLineCollision(new Coord(mouseX, mouseY), bs, slopes, greaterOrLessThan[i])) {
+        truths+=1;
+      }
     }
   }
 
-  ctx.fillStyle = "black";
-  for(let i = 0;i<lines.length;i++) {
-    let slopes = lines[i][0];
-    let sxs = lines[i][1];
-    let sys = lines[i][2];
-    let slope3s = lines[i][3];
-    for(let i = -width;i<width;i++) {
-      ctx.fillRect(i*10+Math.floor(sxs/10-1)*10, Math.floor(i*slopes)*10+Math.floor((sys/10)-1)*10, 10, 10);
-    }
-    for(let i = -height;i<height;i++) {
-      ctx.fillRect(Math.floor(i*slope3s)*10+Math.floor((sxs/10)-1)*10, i*10+Math.floor(sys/10-1)*10, 10, 10);
-    }
+  if(truths==lines.length) {
+    textColliding.innerHTML = "Collision Status: true";
+  } else {
+    textColliding.innerHTML = "Collision Status: false";
   }
   
   pmouseX=mouseX;
