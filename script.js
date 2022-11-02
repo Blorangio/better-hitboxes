@@ -71,6 +71,27 @@ function checkLineCollision(mousePos, b, slope, check) {
 let slope;
 let b;
 let once=true;
+
+let dots = [];
+
+
+function printCode() {
+}
+
+function checkCollisionWithShape(x, y) {
+  let truths = 0;
+  for(let i = 0;i<lines.length;i++) {
+    if(checkLineCollision(new Coord(x, y), lines[i][0], lines[i][1], greaterOrLessThan[i])) {
+      truths+=1;
+    }
+  }
+  if(truths==lines.length) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 function update() {
 
   ctx.fillStyle="black";
@@ -102,6 +123,28 @@ function update() {
   if(lineEnd&&greaterOrLessThan.length==lines.length) {
     lineEnd=false;
     once=true;
+
+    dots = [];
+    for(let i = 0;i<lines.length;i++) {
+      if(lines.length>1) {
+        let m1 = lines[i][1];
+        let b1 = lines[i][0];
+        for(let j = 0;j<lines.length;j++) {
+          let m2 = lines[j][1];
+          let b2 = lines[j][0];
+          if(m2!=m1) {
+            let x3 = (b2-b1)/(m1-m2);
+            let y3 = (m1*x3)+b1;
+    
+            if(checkCollisionWithShape(x3, y3)) {
+              dots.push([x3, y3]);
+            }
+          }
+        }
+      }
+    }
+      
+    
   } else if(lineEnd) {
     if(clicked==true) {
       greaterOrLessThan.push(checkLineCollision(new Coord(mouseX, mouseY), b, slope, true));
@@ -128,6 +171,17 @@ function update() {
     textColliding.innerHTML = "Collision Status: true";
   } else {
     textColliding.innerHTML = "Collision Status: false";
+  }
+
+  for(let i = 0;i<dots.length;i++) {
+    if(lines.length>1) {
+      let x = dots[i][0];
+      let y = dots[i][1];
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, 2 * Math.PI);
+      ctx.fill();
+    }
   }
   
   pmouseX=mouseX;
